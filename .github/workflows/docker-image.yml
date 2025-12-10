@@ -22,5 +22,7 @@ jobs:
 
     - name: Build UI
       run:  cd ui && yarn install --ignore-engines && yarn build
-#    - name: Build the Docker image
-#      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+    - name: Release publish
+      run: make release
