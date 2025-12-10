@@ -4,7 +4,10 @@ on:
   push:
     tags:
       - "*"
-
+permissions:
+  contents: write
+  packages: write
+  
 jobs:
 
   release:
@@ -16,24 +19,33 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+        uses: actions/checkout@v4 # Aggiornato alla versione stabile v4
         with:
           submodules: 'true'
           fetch-depth: 0
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-
+# Aggiungiamo un login esplicito per sicurezza, usando il token automatico
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
       - name: Build UI
         run:  cd ui && yarn install --ignore-engines && yarn build
 
       - name: Setup release environment
+        # 2. MODIFICA: Sostituito GORELEASER_ACCESS_TOKEN con GITHUB_TOKEN
         run: |-
-          echo 'GITHUB_TOKEN=${{secrets.GORELEASER_ACCESS_TOKEN}}' > .release-env
-          echo 'GITHUB_USER=${{github.event.repository.owner.login}}' >> .release-env
-          echo 'GITHUB_PROJECT=${{github.event.repository.name}}' >> .release-env
+          echo 'GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}' > .release-env
+          echo 'GITHUB_USER=${{ github.repository_owner }}' >> .release-env
+          echo 'GITHUB_PROJECT=${{ github.event.repository.name }}' >> .release-env
           echo 'DOCKER_CREDS_FILE=.docker-creds' >> .release-env
-          echo '${{github.event.repository.owner.login}}:${{secrets.GORELEASER_ACCESS_TOKEN}}:ghcr.io' >> .docker-creds
+          # Qui sotto popoliamo il file credenziali, ma il login step sopra dovrebbe aver già risolto
+          echo '${{ github.repository_owner }}:${{ secrets.GITHUB_TOKEN }}:ghcr.io' >> .docker-creds
 
       - name: Release publish
         run: make release
