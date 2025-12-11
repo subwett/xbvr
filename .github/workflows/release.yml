@@ -2,11 +2,8 @@ name: release
 
 on:
   push:
-    branches: [ "master" ]
     tags:
       - "*"
-  pull_request:
-    branches: [ "master" ]
 permissions:
   contents: write
   packages: write
